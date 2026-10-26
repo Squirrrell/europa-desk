@@ -135,6 +135,7 @@ export async function rankCountryWithAI(country: Country, clusters: Cluster[]): 
       },
     ];
   });
+  stories.sort((a, b) => b.importance - a.importance);
 
   if (memo.size > 500) memo.clear();
   memo.set(key, stories);
