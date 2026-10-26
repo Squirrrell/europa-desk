@@ -60,3 +60,7 @@ A full AI refresh makes 46 model calls (45 countries plus the front page). Count
 ## Stack
 
 React 19, Vite, Tailwind CSS v4, Motion, d3-geo, d3-zoom and world-atlas on the client. Express, fast-xml-parser and the OpenAI SDK on the server. Shared types live in `shared/`.
+
+## License
+
+[MIT](LICENSE)
