@@ -1,0 +1,162 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/newsreader";
+
+/* Tokens. Light values first, dark overrides for the system preference and the manual toggle. */
+:root {
+  --bg: #e7e9ec;
+  --ink: #121418;
+  --ink-muted: #545b66;
+  --ink-faint: #7d8590;
+  --surface: rgb(250 250 249 / 0.86);
+  --surface-solid: #fafaf9;
+  --shell: rgb(18 20 24 / 0.04);
+  --shell-ring: rgb(18 20 24 / 0.08);
+  --highlight: rgb(255 255 255 / 0.9);
+  --line: rgb(18 20 24 / 0.09);
+  --land: #f7f7f5;
+  --land-muted: #d9dce1;
+  --graticule: rgb(18 20 24 / 0.06);
+  --border: #c9ced5;
+  --accent: #d4532f;
+  --accent-ink: #ffffff;
+  --shadow: 0 24px 60px -24px rgb(30 38 52 / 0.28);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0d10;
+    --ink: #ebe9e4;
+    --ink-muted: #9aa0a8;
+    --ink-faint: #6b717a;
+    --surface: rgb(19 22 26 / 0.82);
+    --surface-solid: #13161a;
+    --shell: rgb(255 255 255 / 0.035);
+    --shell-ring: rgb(255 255 255 / 0.08);
+    --highlight: rgb(255 255 255 / 0.07);
+    --line: rgb(255 255 255 / 0.08);
+    --land: #1b1f25;
+    --land-muted: #121519;
+    --graticule: rgb(255 255 255 / 0.035);
+    --border: #0b0d10;
+    --accent: #ef6a45;
+    --accent-ink: #160b07;
+    --shadow: 0 30px 70px -30px rgb(0 0 0 / 0.7);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b0d10;
+  --ink: #ebe9e4;
+  --ink-muted: #9aa0a8;
+  --ink-faint: #6b717a;
+  --surface: rgb(19 22 26 / 0.82);
+  --surface-solid: #13161a;
+  --shell: rgb(255 255 255 / 0.035);
+  --shell-ring: rgb(255 255 255 / 0.08);
+  --highlight: rgb(255 255 255 / 0.07);
+  --line: rgb(255 255 255 / 0.08);
+  --land: #1b1f25;
+  --land-muted: #121519;
+  --graticule: rgb(255 255 255 / 0.035);
+  --border: #0b0d10;
+  --accent: #ef6a45;
+  --accent-ink: #160b07;
+  --shadow: 0 30px 70px -30px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-surface: var(--surface);
+  --color-surface-solid: var(--surface-solid);
+  --color-shell: var(--shell);
+  --color-shell-ring: var(--shell-ring);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-serif: "Newsreader Variable", "Iowan Old Style", Georgia, serif;
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+/* Double-bezel panel: hairline tray around a frosted core. */
+.panel-shell {
+  background: var(--shell);
+  box-shadow:
+    0 0 0 1px var(--shell-ring),
+    var(--shadow);
+}
+.panel-core {
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--highlight);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .panel-glass {
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .panel-core {
+    background: var(--surface-solid);
+  }
+}
+
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.country {
+  transition:
+    fill 600ms var(--ease-out-expo),
+    stroke 200ms var(--ease-out-expo);
+  outline: none;
+}
+.country:hover,
+.country:focus-visible,
+.country[data-active="true"] {
+  stroke: var(--accent);
+  stroke-width: 1.4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
