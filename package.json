@@ -1,0 +1,58 @@
+{
+  "name": "europe-news-map",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Interactive map of Europe with AI-ranked news for every country.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c yellow,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "tsx watch --clear-screen=false server/index.ts --dev",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "tsx server/index.ts",
+    "refresh": "tsx server/refresh-cli.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "d3-geo": "^3.1.1",
+    "d3-selection": "^3.0.0",
+    "d3-transition": "^3.0.1",
+    "d3-zoom": "^3.0.0",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "fast-xml-parser": "^5.11.2",
+    "motion": "^14.6.0",
+    "openai": "^7.43.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/d3-geo": "^3.1.1",
+    "@types/d3-selection": "^3.0.12",
+    "@types/d3-transition": "^3.0.9",
+    "@types/d3-zoom": "^3.0.9",
+    "@types/express": "^5.0.6",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.6",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  }
+}
