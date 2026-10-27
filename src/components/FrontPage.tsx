@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowClockwise } from "@phosphor-icons/react";
 import type { Category, Story } from "../../shared/types";
@@ -21,6 +22,77 @@ interface Props {
   onRetry: () => void;
 }
 
+const EDGE_FADE = "28px";
+
+/** Topic chips in a scrolling row: the selected chip is scrolled into full view and clipped edges fade out. */
+function FilterChips({ filter, onFilter }: Pick<Props, "filter" | "onFilter">) {
+  const row = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ left: false, right: false });
+  const reduce = useReducedMotion();
+
+  const measure = useCallback(() => {
+    const el = row.current;
+    if (!el) return;
+    const left = el.scrollLeft > 1;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+    setEdges((e) => (e.left === left && e.right === right ? e : { left, right }));
+  }, []);
+
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measure]);
+
+  useEffect(() => {
+    const el = row.current;
+    const chip = el?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!el || !chip) return;
+    const target = chip.offsetLeft - (el.clientWidth - chip.offsetWidth) / 2;
+    el.scrollTo({ left: target, behavior: reduce ? "auto" : "smooth" });
+  }, [filter, reduce]);
+
+  const mask = `linear-gradient(to right, ${edges.left ? "transparent" : "#000"}, #000 ${EDGE_FADE}, #000 calc(100% - ${EDGE_FADE}), ${
+    edges.right ? "transparent" : "#000"
+  })`;
+
+  return (
+    <div
+      ref={row}
+      onScroll={measure}
+      onWheel={(e) => {
+        // A plain mouse wheel only scrolls vertically, which would leave the later chips unreachable.
+        if (row.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) row.current.scrollLeft += e.deltaY;
+      }}
+      style={{ maskImage: mask, WebkitMaskImage: mask }}
+      className="no-scrollbar relative flex gap-1.5 overflow-x-auto px-5 pb-3 md:px-6"
+      role="tablist"
+      aria-label="Filter by topic"
+    >
+      {FILTERS.map((f) => {
+        const active = f === filter;
+        return (
+          <button
+            key={f}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onFilter(f)}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] transition duration-300 ease-fluid active:scale-[0.96] ${
+              active ? "bg-ink text-bg" : "text-ink-muted ring-1 ring-line hover:text-ink"
+            }`}
+          >
+            {f === "all" ? "All" : CATEGORY_LABEL[f]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function FrontPage({ state, entries, filter, onFilter, onOpen, onHighlight, onRetry }: Props) {
   const reduce = useReducedMotion();
 
@@ -41,25 +113,7 @@ export function FrontPage({ state, entries, filter, onFilter, onOpen, onHighligh
           </p>
         </header>
 
-        <div className="no-scrollbar flex gap-1.5 overflow-x-auto px-5 pb-3 md:px-6" role="tablist" aria-label="Filter by topic">
-          {FILTERS.map((f) => {
-            const active = f === filter;
-            return (
-              <button
-                key={f}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => onFilter(f)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] transition duration-300 ease-fluid active:scale-[0.96] ${
-                  active ? "bg-ink text-bg" : "text-ink-muted ring-1 ring-line hover:text-ink"
-                }`}
-              >
-                {f === "all" ? "All" : CATEGORY_LABEL[f]}
-              </button>
-            );
-          })}
-        </div>
+        <FilterChips filter={filter} onFilter={onFilter} />
 
         <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-2 pb-2 md:px-3">
           {state.status === "loading" && <Skeleton />}
