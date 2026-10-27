@@ -1,0 +1,45 @@
+# Publishes the static, keyword-ranked edition to GitHub Pages. No API keys or paid services:
+# the scraper runs here, writes news.json beside the built site, and Pages serves it.
+name: Publish to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Every 30 minutes, off the top of the hour when GitHub's scheduler is busiest.
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:pages
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

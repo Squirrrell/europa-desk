@@ -13,6 +13,8 @@
     "dev:api": "tsx watch --clear-screen=false server/index.ts --dev",
     "dev:web": "vite",
     "build": "vite build",
+    "build:pages": "vite build --mode pages && tsx server/export-static.ts dist/news.json",
+    "preview:pages": "vite preview --mode pages",
     "start": "tsx server/index.ts",
     "refresh": "tsx server/refresh-cli.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json"

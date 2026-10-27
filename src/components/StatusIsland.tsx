@@ -7,7 +7,8 @@ interface Props {
   state: NewsState;
   theme: "light" | "dark";
   onToggleTheme: () => void;
-  onRefresh: () => Promise<"too_soon" | "started">;
+  /** Absent on the static site, where the news only updates on the publishing schedule. */
+  onRefresh?: () => Promise<"too_soon" | "started">;
 }
 
 function modelLabel(model?: string) {
@@ -54,23 +55,29 @@ export function StatusIsland({ state, theme, onToggleTheme, onRefresh }: Props) 
         {ranking && (
           <span
             className="hidden rounded-full px-2.5 py-1 text-[11px] whitespace-nowrap text-ink-muted ring-1 ring-line lg:block"
-            title={ready?.data.mode === "heuristic" ? "Add OPENAI_API_KEY on the server for AI ranking and summaries" : undefined}
+            title={
+              ready?.data.mode === "heuristic"
+                ? "Ranked by keywords, outlet coverage and recency. Run the server with OPENAI_API_KEY for AI ranking."
+                : undefined
+            }
           >
             {ranking}
           </span>
         )}
-        <button
-          type="button"
-          aria-label="Refresh news"
-          title="Refresh news"
-          disabled={!ready || refreshing}
-          onClick={async () => {
-            if ((await onRefresh()) === "too_soon") setNote("Just updated, try again in a few minutes");
-          }}
-          className="ml-1 grid size-9 place-items-center rounded-full text-ink-muted transition duration-300 ease-fluid hover:bg-shell hover:text-ink active:scale-[0.94] disabled:opacity-40"
-        >
-          <ArrowClockwise size={16} weight="light" className={refreshing ? "animate-spin" : ""} />
-        </button>
+        {onRefresh && (
+          <button
+            type="button"
+            aria-label="Refresh news"
+            title="Refresh news"
+            disabled={!ready || refreshing}
+            onClick={async () => {
+              if ((await onRefresh()) === "too_soon") setNote("Just updated, try again in a few minutes");
+            }}
+            className="ml-1 grid size-9 place-items-center rounded-full text-ink-muted transition duration-300 ease-fluid hover:bg-shell hover:text-ink active:scale-[0.94] disabled:opacity-40"
+          >
+            <ArrowClockwise size={16} weight="light" className={refreshing ? "animate-spin" : ""} />
+          </button>
+        )}
         <button
           type="button"
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}

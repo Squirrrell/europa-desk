@@ -39,6 +39,19 @@ Other scripts:
 | `npm run build && npm start` | Production build; the API server also serves the built site on `PORT` (default 8787). |
 | `npm run typecheck` | Type-checks the client and the server. |
 
+## Free static edition (GitHub Pages)
+
+The site can also run with no server and no OpenAI key. `.github/workflows/pages.yml` runs on GitHub Actions every 30 minutes: it scrapes the feeds, ranks stories with the keyword heuristic, writes `news.json` next to the built site and publishes it to GitHub Pages. On a public repository both Actions and Pages are free.
+
+To try the static build locally:
+
+```bash
+npm run build:pages     # Vite build plus a fresh keyword-ranked dist/news.json
+npm run preview:pages
+```
+
+To set it up on your own fork, go to **Settings → Pages** and set **Source** to **GitHub Actions**. The static edition has no refresh button; it updates on the workflow's schedule. GitHub pauses scheduled workflows after 60 days with no activity in the repository, so you may need to re-enable the workflow from the Actions tab.
+
 ## Configuration
 
 | Variable | Default | Notes |

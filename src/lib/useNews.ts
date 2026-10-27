@@ -10,6 +10,10 @@ export type NewsState =
 const POLL_WARMING_MS = 5_000;
 const POLL_READY_MS = 5 * 60_000;
 
+/** The GitHub Pages build has no API: a scheduled workflow publishes news.json beside the page. */
+export const STATIC_SITE = import.meta.env.MODE === "pages";
+const NEWS_URL = STATIC_SITE ? `${import.meta.env.BASE_URL}news.json` : "/api/news";
+
 export function useNews() {
   const [state, setState] = useState<NewsState>({ status: "loading" });
   const timer = useRef<number | undefined>(undefined);
@@ -17,7 +21,7 @@ export function useNews() {
   const load = useCallback(async () => {
     window.clearTimeout(timer.current);
     try {
-      const res = await fetch("/api/news");
+      const res = await fetch(NEWS_URL, { cache: "no-cache" });
       if (res.status === 503) {
         const body = (await res.json().catch(() => ({}))) as { status?: PipelineStatus };
         if (body.status?.lastError && !body.status.refreshing) {
@@ -61,5 +65,5 @@ export function useNews() {
     return "started" as const;
   }, [load]);
 
-  return { state, refresh, retry: load };
+  return { state, refresh: STATIC_SITE ? undefined : refresh, retry: load };
 }
