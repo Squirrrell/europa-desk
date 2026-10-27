@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
-import { ArrowClockwise } from "@phosphor-icons/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { ArrowClockwise, CaretLeft, CaretRight } from "@phosphor-icons/react";
 import type { Category, Story } from "../../shared/types";
 import { CATEGORY_LABEL, FILTERS, timeAgo } from "../lib/format";
 import type { NewsState } from "../lib/useNews";
@@ -22,9 +22,14 @@ interface Props {
   onRetry: () => void;
 }
 
-const EDGE_FADE = "28px";
+const EDGE_FADE = "56px";
+const PEEK_PX = 64;
+const PEEK_KEY = "europa-desk:chips-peeked";
 
-/** Topic chips in a scrolling row: the selected chip is scrolled into full view and clipped edges fade out. */
+/**
+ * Topic chips in a scrolling row. The selected chip is scrolled into full view, clipped edges fade
+ * behind an arrow button, and on the first visit the row nudges sideways once to show it scrolls.
+ */
 function FilterChips({ filter, onFilter }: Pick<Props, "filter" | "onFilter">) {
   const row = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
@@ -55,41 +60,107 @@ function FilterChips({ filter, onFilter }: Pick<Props, "filter" | "onFilter">) {
     el.scrollTo({ left: target, behavior: reduce ? "auto" : "smooth" });
   }, [filter, reduce]);
 
+  // One sideways nudge per browser session, cancelled as soon as the reader touches the row.
+  useEffect(() => {
+    const el = row.current;
+    if (!el || !edges.right || reduce) return;
+    try {
+      if (sessionStorage.getItem(PEEK_KEY)) return;
+    } catch {
+      // Storage can be blocked; nudging again on the next load is harmless.
+    }
+    const timers: number[] = [];
+    const cancel = () => timers.forEach((t) => window.clearTimeout(t));
+    timers.push(
+      window.setTimeout(() => {
+        if (el.scrollLeft > 1) return;
+        try {
+          sessionStorage.setItem(PEEK_KEY, "1");
+        } catch {
+          // See above.
+        }
+        el.scrollTo({ left: PEEK_PX, behavior: "smooth" });
+        timers.push(window.setTimeout(() => el.scrollTo({ left: 0, behavior: "smooth" }), 650));
+      }, 1100),
+    );
+    el.addEventListener("pointerdown", cancel);
+    el.addEventListener("wheel", cancel, { passive: true });
+    return () => {
+      cancel();
+      el.removeEventListener("pointerdown", cancel);
+      el.removeEventListener("wheel", cancel);
+    };
+  }, [edges.right, reduce]);
+
+  const page = (dir: 1 | -1) => {
+    const el = row.current;
+    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.6, behavior: reduce ? "auto" : "smooth" });
+  };
+
   const mask = `linear-gradient(to right, ${edges.left ? "transparent" : "#000"}, #000 ${EDGE_FADE}, #000 calc(100% - ${EDGE_FADE}), ${
     edges.right ? "transparent" : "#000"
   })`;
 
   return (
-    <div
-      ref={row}
-      onScroll={measure}
-      onWheel={(e) => {
-        // A plain mouse wheel only scrolls vertically, which would leave the later chips unreachable.
-        if (row.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) row.current.scrollLeft += e.deltaY;
-      }}
-      style={{ maskImage: mask, WebkitMaskImage: mask }}
-      className="no-scrollbar relative flex gap-1.5 overflow-x-auto px-5 pb-3 md:px-6"
-      role="tablist"
-      aria-label="Filter by topic"
-    >
-      {FILTERS.map((f) => {
-        const active = f === filter;
-        return (
-          <button
-            key={f}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onFilter(f)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] transition duration-300 ease-fluid active:scale-[0.96] ${
-              active ? "bg-ink text-bg" : "text-ink-muted ring-1 ring-line hover:text-ink"
-            }`}
-          >
-            {f === "all" ? "All" : CATEGORY_LABEL[f]}
-          </button>
-        );
-      })}
+    <div className="relative">
+      <div
+        ref={row}
+        onScroll={measure}
+        onWheel={(e) => {
+          // A plain mouse wheel only scrolls vertically, which would leave the later chips unreachable.
+          if (row.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) row.current.scrollLeft += e.deltaY;
+        }}
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
+        className="no-scrollbar relative flex gap-1.5 overflow-x-auto px-5 pb-3 md:px-6"
+        role="tablist"
+        aria-label="Filter by topic"
+      >
+        {FILTERS.map((f) => {
+          const active = f === filter;
+          return (
+            <button
+              key={f}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onFilter(f)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] transition duration-300 ease-fluid active:scale-[0.96] ${
+                active ? "bg-ink text-bg" : "text-ink-muted ring-1 ring-line hover:text-ink"
+              }`}
+            >
+              {f === "all" ? "All" : CATEGORY_LABEL[f]}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Chips stay keyboard-reachable on their own, so the arrows are a pointer convenience only. */}
+      <AnimatePresence initial={false}>
+        {edges.left && <EdgeArrow key="left" side="left" onClick={() => page(-1)} />}
+        {edges.right && <EdgeArrow key="right" side="right" onClick={() => page(1)} />}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function EdgeArrow({ side, onClick }: { side: "left" | "right"; onClick: () => void }) {
+  const Icon = side === "left" ? CaretLeft : CaretRight;
+  return (
+    <motion.button
+      type="button"
+      tabIndex={-1}
+      aria-hidden
+      onClick={onClick}
+      initial={{ opacity: 0, x: side === "left" ? 6 : -6 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: side === "left" ? 6 : -6 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className={`absolute top-0 grid size-[30px] place-items-center rounded-full bg-surface-solid text-ink-muted shadow-[0_2px_10px_-4px_rgb(0_0_0/0.25)] ring-1 ring-line transition-colors duration-300 hover:text-ink active:scale-[0.94] ${
+        side === "left" ? "left-3 md:left-4" : "right-3 md:right-4"
+      }`}
+    >
+      <Icon size={15} weight="light" />
+    </motion.button>
   );
 }
 
